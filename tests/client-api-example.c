@@ -32,6 +32,8 @@
 #include <sys/timerfd.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <getopt.h>
 
 #include <waltham-object.h>
 #include <waltham-client.h>
@@ -365,8 +367,43 @@ check_connection_errors(struct wth_connection *conn)
 }
 
 int
-main(int arcg, char *argv[])
+main(int argc, char *argv[])
 {
+	int c;
+	char* cfg_address = "localhost";
+	char* cfg_port = "34400";
+
+	while (1) {
+		static struct option long_options[] = {
+			{ "address", required_argument, 0, 'a' },
+			{ "port", required_argument, 0, 'p' },
+			{ 0, 0, 0, 0 }
+		};
+		/* getopt_long stores the option index here. */
+		int option_index = 0;
+
+		c = getopt_long(argc, argv, "a:p:", long_options, &option_index);
+
+		/* Detect the end of the options. */
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'p':
+			cfg_port = strdup(optarg);
+			break;
+		case 'a':
+			cfg_address = strdup(optarg);
+			break;
+		case '?':
+			/* getopt_long already printed an error message. */
+			exit(1);
+			break;
+		default:
+			abort();
+		}
+	}
+
 	struct display dpy = { 0 };
 
 	dpy.epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -382,7 +419,7 @@ main(int arcg, char *argv[])
 		exit(1);
 	}
 
-	dpy.connection = wth_connect_to_server("localhost", "34400");
+	dpy.connection = wth_connect_to_server(cfg_address, cfg_port);
 	if (!dpy.connection) {
 		perror("Error connecting");
 		exit(1);
