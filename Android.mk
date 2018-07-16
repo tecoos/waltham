@@ -6,10 +6,15 @@ LOCAL_CLANG := true
 
 LOCAL_MODULE := libwaltham
 
-$(warning LOCAL_PATH)
-$(warning $(LOCAL_PATH))
+WALTHAM_GEN_FILES_DIR := $(PRODUCT_OUT)/obj/SHARED_LIBRARIES/libwaltham_intermediates
 
 LOCAL_PATH_WALTHAM := $(LOCAL_PATH)
+
+VARS_OLD := $(.VARIABLES)
+CUR-DIR := $(shell pwd)
+$(foreach v,                                        \
+  $(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), \
+  $(warning $(v) = $($(v))))
 
 tools = \
 	$(LOCAL_PATH)/tools/gen.py
@@ -21,7 +26,7 @@ core_interface = \
 
 core_interface_include := $(addprefix -i ,$(core_interface))
 
-external/waltham/src/waltham/waltham-client.h:
+$(WALTHAM_GEN_FILES_DIR)/waltham-client.h:
 	$(LOCAL_PATH_WALTHAM)/tools/gen.py \
 		-p $(LOCAL_PATH_WALTHAM)/src/waltham//header-preamble.txt \
 		$(core_interface_include) \
@@ -29,7 +34,7 @@ external/waltham/src/waltham/waltham-client.h:
 		-m client \
 		-t header
 
-external/waltham/src/waltham/client-serialice.c: external/waltham/src/waltham/waltham-client.h
+$(WALTHAM_GEN_FILES_DIR)/client-serialice.c: $(WALTHAM_GEN_FILES_DIR)/waltham-client.h
 	$(LOCAL_PATH_WALTHAM)/tools/gen.py \
 		-p $(LOCAL_PATH_WALTHAM)/src/waltham/serial-preamble.txt \
 		$(core_interface_include) \
@@ -37,7 +42,7 @@ external/waltham/src/waltham/client-serialice.c: external/waltham/src/waltham/wa
 		-m client \
 		-t marshaller
 
-external/waltham/src/waltham/client-deserialice.c: external/waltham/src/waltham/waltham-client.h
+$(WALTHAM_GEN_FILES_DIR)/client-deserialice.c: $(WALTHAM_GEN_FILES_DIR)/waltham-client.h
 	$(LOCAL_PATH_WALTHAM)/tools/gen.py \
 		-p $(LOCAL_PATH_WALTHAM)/src/waltham/deserial-preamble.txt \
 		$(core_interface_include) \
@@ -45,7 +50,7 @@ external/waltham/src/waltham/client-deserialice.c: external/waltham/src/waltham/
 		-m client \
 		-t demarshaller
 
-external/waltham/src/waltham/waltham-server.h:
+$(WALTHAM_GEN_FILES_DIR)/waltham-server.h:
 	$(LOCAL_PATH_WALTHAM)/tools/gen.py \
 		-p $(LOCAL_PATH_WALTHAM)/src/waltham/header-preamble.txt \
 		$(core_interface_include) \
@@ -53,7 +58,7 @@ external/waltham/src/waltham/waltham-server.h:
 		-m server \
 		-t header
 
-external/waltham/src/waltham/server-serialice.c: external/waltham/src/waltham/waltham-server.h
+$(WALTHAM_GEN_FILES_DIR)/server-serialice.c: $(WALTHAM_GEN_FILES_DIR)/waltham-server.h
 	$(LOCAL_PATH_WALTHAM)/tools/gen.py \
 		-p $(LOCAL_PATH_WALTHAM)/src/waltham/serial-preamble.txt \
 		$(core_interface_include) \
@@ -61,7 +66,7 @@ external/waltham/src/waltham/server-serialice.c: external/waltham/src/waltham/wa
 		-m server \
 		-t marshaller
 
-external/waltham/src/waltham/server-deserialice.c: external/waltham/src/waltham/waltham-server.h
+$(WALTHAM_GEN_FILES_DIR)/server-deserialice.c: $(WALTHAM_GEN_FILES_DIR)/waltham-server.h
 	$(warning $(LOCAL_PATH_WALTHAM))
 	$(LOCAL_PATH_WALTHAM)/tools/gen.py \
 	-p $(LOCAL_PATH_WALTHAM)/src/waltham/deserial-preamble.txt \
@@ -73,17 +78,17 @@ external/waltham/src/waltham/server-deserialice.c: external/waltham/src/waltham/
 
 
 LOCAL_SRC_FILES :=	\
-				src/waltham/client-serialice.c \
-				src/waltham/client-deserialice.c \
-				src/waltham/server-serialice.c \
-				src/waltham/server-deserialice.c \
+				../../$(WALTHAM_GEN_FILES_DIR)/client-serialice.c \
+				../../$(WALTHAM_GEN_FILES_DIR)/client-deserialice.c \
+				../../$(WALTHAM_GEN_FILES_DIR)/server-serialice.c \
+				../../$(WALTHAM_GEN_FILES_DIR)/server-deserialice.c \
 				src/waltham/marshaller.c \
 				src/waltham/message.c \
 				src/waltham/waltham-connection.c \
 				src/waltham/waltham-object.c \
 				src/waltham/waltham-util.c
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/src/waltham
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/src/waltham $(LOCAL_PATH)/../../$(WALTHAM_GEN_FILES_DIR)
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -92,17 +97,15 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE_TAGS := optional
-
 LOCAL_SRC_FILES := \
 		tests/client-api-example.c
 
 LOCAL_MODULE := waltham-client
-
+LOCAL_MODULE_PATH := $(TARGET_OUT)/bin
 LOCAL_CFLAGS += -Wno-unused-parameter
 
 LOCAL_SHARED_LIBRARIES += libwaltham
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/src/waltham
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/src/waltham $(LOCAL_PATH)/../../$(WALTHAM_GEN_FILES_DIR)
 
 include $(BUILD_EXECUTABLE)
